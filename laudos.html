@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SisDEA Web - Avaliação Imobiliária</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a237e;
+            --secondary: #303f9f;
+            --bg: #f5f5f5;
+            --card: #ffffff;
+            --text: #333;
+            --light: #757575;
+            --border: #e0e0e0;
+            --success: #2e7d32;
+            --danger: #c62828;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+        .hidden { display: none !important; }
+
+        /* AUTH */
+        .auth-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        .auth-card { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 420px; }
+        .auth-card h2 { text-align: center; margin-bottom: 2rem; color: var(--primary); font-size: 1.5rem; }
+        .auth-card .logo { text-align: center; font-size: 2.5rem; color: var(--primary); margin-bottom: 0.5rem; }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: 0.9rem; color: #555; }
+        .form-control { width: 100%; padding: 0.75rem 1rem; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; transition: 0.2s; }
+        .form-control:focus { outline: none; border-color: var(--primary); }
+        .btn { cursor: pointer; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 500; font-size: 0.95rem; transition: 0.3s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; justify-content: center; }
+        .btn-primary:hover { background: var(--secondary); transform: translateY(-1px); }
+        .auth-toggle { text-align: center; margin-top: 1.2rem; font-size: 0.9rem; color: var(--light); cursor: pointer; }
+        .auth-toggle:hover { color: var(--primary); }
+
+        /* HEADER */
+        header { background: var(--primary); color: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .user-info { display: flex; align-items: center; gap: 1rem; }
+        .user-info span { font-size: 0.9rem; opacity: 0.9; }
+
+        /* DASHBOARD */
+        .main-content { padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+        .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .dash-header h1 { font-size: 1.8rem; color: var(--primary); }
+        .search-bar input { padding: 0.7rem 1rem; border: 2px solid var(--border); border-radius: 8px; width: 100%; max-width: 400px; font-size: 0.95rem; }
+        .search-bar input:focus { outline: none; border-color: var(--primary); }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); }
+        .tab { padding: 0.75rem 1.5rem; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 500; color: var(--light); transition: 0.2s; }
+        .tab:hover { color: var(--primary); }
+        .tab.active { border-bottom-color: var(--primary); color: var(--primary); }
+        .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .project-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); border-top: 4px solid #e0e0e0; transition: 0.2s; }
+        .project-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+        .project-card.concluido { border-top-color: var(--success); }
+        .project-card h3 { margin: 0.5rem 0; font-size: 1.1rem; }
+        .project-meta { font-size: 0.85rem; color: var(--light); margin-bottom: 0.8rem; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .badge-success { background: #e8f5e9; color: var(--success); }
+        .badge-pending { background: #fff3e0; color: #ef6c00; }
+        .card-actions { display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+        .btn-icon { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-icon:hover { background: #f0f0f0; }
+
+        /* EDITOR */
+        .editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .section-card { background: white; border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+        .section-header { background: #f8f9fa; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 0.95rem; }
+        .section-header:hover { background: #f0f0f0; }
+        .section-header i.fa-chevron-down { transition: 0.3s; }
+        .section-body { padding: 1.5rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        .table-responsive { overflow-x: auto; margin: 1rem 0; border-radius: 8px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { border: 1px solid var(--border); padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f1f3f4; font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
+        .input-table { width: 100%; border: none; background: transparent; outline: none; font-size: 0.9rem; padding: 0.2rem; }
+        .input-table:focus { background: #f0f4ff; }
+        .equation-box { background: #263238; color: #80cbc4; padding: 1.5rem; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 1rem; width: 100%; min-height: 120px; border: none; resize: vertical; line-height: 1.8; }
+
+        /* ATTACHMENTS */
+        .attachment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+        .attachment-item { background: #f8f9fa; border-radius: 8px; padding: 0.8rem; text-align: center; border: 1px solid var(--border); }
+        .attachment-item img { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; }
+        .attachment-item .file-icon { font-size: 2.5rem; color: var(--danger); margin: 10px 0; }
+        .attachment-item .file-name { font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0.3rem 0; }
+
+        /* TOAST */
+        #toast { position: fixed; bottom: 30px; right: 30px; padding: 1rem 2rem; border-radius: 8px; color: white; z-index: 9999; transition: 0.4s; opacity: 0; transform: translateY(20px); font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        #toast.show { opacity: 1; transform: translateY(0); }
+        .toast-success { background: var(--success); }
+        .toast-error { background: var(--danger); }
+
+        /* PRINT */
+        @media print {
+            header, .editor-header, .tabs, .search-bar, .dash-header, .card-actions, .no-print, #toast, .btn, .btn-icon { display: none !important; }
+            .section-body { display: block !important; }
+            .section-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+            body { font-size: 11pt; background: white; }
+            .main-content { padding: 0; max-width: 100%; }
+            .section-header { background: #eee; }
+            .section-header i.fa-chevron-down { display: none; }
+            .auth-screen, #auth-screen { display: none !important; }
+            .app-container, #app-screen { display: block !important; }
+            #dashboard-view { display: none !important; }
+            #editor-view { display: block !important; }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            .project-grid { grid-template-columns: 1fr; }
+            .main-content { padding: 1rem; }
+            .dash-header h1 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ===== AUTH SCREEN ===== -->
+<div id="auth-screen" class="auth-screen">
+    <div class="auth-card" id="login-form">
+        <div class="logo"><i class="fas fa-chart-line"></i></div>
+        <h2>SisDEA Web</h2>
+        <p style="text-align:center;color:var(--light);margin-bottom:1.5rem;font-size:0.9rem;">Sistema de Laudos de Avaliação</p>
+        <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="login-email" class="form-control" placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="login-pass" class="form-control" placeholder="******">
+        </div>
+        <button class="btn btn-primary" onclick="app.login()"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+        <div class="auth-toggle" onclick="app.toggleAuth(false)">Não tem conta? <strong>Criar agora</strong></div>
+    </div>
+
+    <div class="auth-card hidden" id="register-form">
+        <div class="logo"><i class="fas fa-user-plus"></i></div>
+        <h2>Criar Conta</h2>
+        <div class="form-group">
+            <label>Nome Completo</label>
+            <input type="text" id="reg-name" class="form-control" placeholder="Seu nome">
+        </div>
+        <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="reg-email" class="form-control" placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="reg-pass" class="form-control" placeholder="Minimo 4 caracteres">
+        </div>
+        <button class="btn btn-primary" onclick="app.register()"><i class="fas fa-check"></i> Cadastrar</button>
+        <div class="auth-toggle" onclick="app.toggleAuth(true)">Ja tem conta? <strong>Fazer login</strong></div>
+    </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app-screen" class="hidden">
+    <header>
+        <div style="font-weight:700;font-size:1.1rem;display:flex;align-items:center;gap:0.5rem;">
+            <i class="fas fa-chart-line"></i> SISDEA WEB
+        </div>
+        <div class="user-info">
+            <span id="display-user-name"></span>
+            <button class="btn" style="background:rgba(255,255,255,0.15);color:white;padding:0.5rem 1rem;" onclick="app.logout()">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="dashboard-view" class="main-content">
+        <div class="dash-header">
+            <h1><i class="fas fa-folder-open"></i> Meus Projetos</h1>
+            <button class="btn btn-primary" style="width:auto;padding:0.75rem 1.5rem;" onclick="app.newProject()">
+                <i class="fas fa-plus"></i> Novo Projeto
+            </button>
+        </div>
+        <div class="search-bar" style="margin-bottom:1.5rem;">
+            <input type="text" id="search-input" placeholder="Pesquisar por titulo..." oninput="app.renderProjects()">
+        </div>
+        <div class="tabs">
+            <div class="tab active" onclick="app.filterProjects('all', this)"> Todos</div>
+            <div class="tab" onclick="app.filterProjects('done', this)"> Concluidos</div>
+            <div class="tab" onclick="app.filterProjects('pending', this)"> Nao Concluidos</div>
+        </div>
+        <div id="project-list" class="project-grid"></div>
+        <div id="empty-state" class="hidden" style="text-align:center;padding:4rem 2rem;color:var(--light);">
+            <i class="fas fa-inbox" style="font-size:4rem;margin-bottom:1rem;opacity:0.3;"></i>
+            <h3 style="color:var(--light);">Nenhum projeto encontrado</h3>
+            <p style="margin-top:0.5rem;">Crie seu primeiro projeto clicando em "Novo Projeto"</p>
+        </div>
+    </div>
+
+    <!-- ===== EDITOR ===== -->
+    <div id="editor-view" class="main-content hidden">
+        <div class="editor-header">
+            <button class="btn" style="background:#eee;" onclick="app.showDashboard()">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
+                <button class="btn" style="background:#607d8b;color:white;" onclick="window.print()">
+                    <i class="fas fa-print"></i> Imprimir / PDF
+                </button>
+                <button class="btn" style="background:var(--success);color:white;" onclick="app.saveCurrentProject()">
+                    <i class="fas fa-save"></i> Salvar Projeto
+                </button>
+            </div>
+        </div>
+
+        <h2 id="editor-title" style="margin-bottom:2rem;border-bottom:3px solid var(--primary);padding-bottom:0.8rem;color:var(--primary);">
+            <i class="fas fa-file-alt"></i> Novo Relatorio de Avaliacao
+        </h2>
+
+        <div id="form-container">
+
+            <!-- SECAO 1 -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-info-circle" style="color:var(--primary);"></i> SECAO 1 - INFORMACOES BASICAS</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Autor</label>
+                            <input type="text" class="form-control data-field" data-path="basico.autor">
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo</label>
+                            <input type="text" class="form-control data-field" data-path="basico.modelo" placeholder="Ex: ANA_APTO_QUARTOS">
+                        </div>
+                        <div class="form-group">
+                            <label>Data do Modelo</label>
+                            <input type="date" class="form-control data-field" data-path="basico.data">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipologia</label>
+                            <select class="form-control data-field" data-path="basico.tipologia">
+                                <option>Apartamentos</option>
+                                <option>Casas</option>
+                                <option>Terrenos</option>
+                                <option>Comercial</option>
+                                <option>Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECAO 2 -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-list-ol" style="color:var(--primary);"></i> SECAO 2 - INFORMACOES COMPLEMENTARES</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="grid-4">
+                        <div class="form-group"><label>Total de Variaveis</label><input type="number" class="form-control data-field" data-path="comp.totalVar"></div>
+                        <div class="form-group"><label>Variaveis Utilizadas</label><input type="number" class="form-control data-field" data-path="comp.useVar"></div>
+                        <div class="form-group"><label>Total de Dados</label><input type="number" class="form-control data-field" data-path="comp.totalDados"></div>
+                        <div class="form-group"><label>Dados Utilizados</label><input type="number" class="form-control data-field" data-path="comp.useDados"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECAO 3 - VARIAVEIS -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-table" style="color:var(--primary);"></i> SECAO 3 - DESCRICAO DAS VARIAVEIS</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="table-responsive">
+                        <table id="table-variaveis">
+                            <thead><tr><th>Nome</th><th>Tipo</th><th>Classificacao</th><th>Descricao</th><th>Habilitada</th><th class="no-print" style="width:50px;">Acao</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <button class="btn no-print" style="background:#e8eaf6;color:var(--primary);width:auto;margin-top:0.5rem;" onclick="app.addRow('variaveis')">
+                        <i class="fas fa-plus"></i> Adicionar Variavel
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECAO 4 - ESTATISTICAS -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-calculator" style="color:var(--primary);"></i> SECAO 4 - ESTATISTICAS DESCRITIVAS</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="table-responsive">
+                        <table id="table-estatisticas">
+                            <thead><tr><th>Variavel</th><th>Valor Minimo</th><th>Valor Maximo</th><th>Amplitude</th><th>Valor Medio</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECAO 5 - COEFICIENTES -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-percentage" style="color:var(--primary);"></i> SECAO 5 - COEFICIENTES DE CORRELACAO</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="grid-3">
+                        <div class="form-group"><label>Coeficiente de Correlacao (R)</label><input type="number" step="0.000001" class="form-control data-field" data-path="coef.r"></div>
+                        <div class="form-group"><label>Coeficiente de Determinacao (R²)</label><input type="number" step="0.000001" class="form-control data-field" data-path="coef.r2"></div>
+                        <div class="form-group"><label>Fisher - Snedecor (F)</label><input type="number" step="0.01" class="form-control data-field" data-path="coef.fisher"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECAO 6 - NORMALIDADE -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-chart-bar" style="color:var(--primary);"></i> SECAO 6 - NORMALIDADE DOS RESIDUOS</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Distribuicao dos Residuos</th><th>Curva Normal</th><th>Modelo (%)</th></tr></thead>
+                            <tbody>
+                                <tr><td>Entre -1s e +1s</td><td>68%</td><td><input type="number" class="input-table data-field" data-path="normal.sigma1" value="68"></td></tr>
+                                <tr><td>Entre -1,64s e +1,64s</td><td>90%</td><td><input type="number" class="input-table data-field" data-path="normal.sigma164" value="90"></td></tr>
+                                <tr><td>Entre -1,96s e +1,96s</td><td>95%</td><td><input type="number" class="input-table data-field" data-path="normal.sigma196" value="100"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECAO 7 - OUTLIERS -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-exclamation-triangle" style="color:var(--primary);"></i> SECAO 7 - OUTLIERS DO MODELO</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="grid-2">
+                        <div class="form-group"><label>Quantidade de Outliers</label><input type="number" class="form-control data-field" data-path="outliers.qtd"></div>
+                        <div class="form-group"><label>% de Outliers</label><input type="text" class="form-control data-field" data-path="outliers.perc" placeholder="0,00%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECAO 8 - ANOVA -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-sigma" style="color:var(--primary);"></i> SECAO 8 - ANALISE DA VARIANCIA (ANOVA)</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Fonte de Variacao</th><th>Soma dos Quadrados</th><th>Graus de Liberdade</th><th>Quadrado Medio</th><th>F</th></tr></thead>
+                            <tbody>
+                                <tr><td>Explicada</td><td><input type="text" class="input-table data-field" data-path="anova.sqExp" value="830356929404,668"></td><td><input type="number" class="input-table data-field" data-path="anova.glExp" value="4"></td><td><input type="text" class="input-table data-field" data-path="anova.qmExp" value="207589232351,167"></td><td><input type="text" class="input-table data-field" data-path="anova.f" value="43,443"></td></tr>
+                                <tr><td>Nao Explicada</td><td><input type="text" class="input-table data-field" data-path="anova.sqNaoExp" value="129016387033,957"></td><td><input type="number" class="input-table data-field" data-path="anova.glNaoExp" value="27"></td><td><input type="text" class="input-table data-field" data-path="anova.qmNaoExp" value="4778384704,96"></td><td>-</td></tr>
+                                <tr><td><strong>Total</strong></td><td><input type="text" class="input-table data-field" data-path="anova.sqTotal" value="959373316438,624"></td><td><input type="number" class="input-table data-field" data-path="anova.glTotal" value="31"></td><td>-</td><td>-</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECAO 9 - EQUACAO -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-equals" style="color:var(--primary);"></i> SECAO 9 - EQUACAO DE REGRESSAO</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <textarea class="equation-box data-field" data-path="equacao" placeholder="Insira a equacao de regressao..."></textarea>
+                </div>
+            </div>
+
+            <!-- SECAO 10 - TESTES -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-flask" style="color:var(--primary);"></i> SECAO 10 - TESTES DE HIPOTESES</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Variavel</th><th>Transf.</th><th>t Obs.</th><th>Sig.(%)</th></tr></thead>
+                            <tbody>
+                                <tr><td>Area privativa</td><td>1/x</td><td><input type="text" class="input-table data-field" data-path="testes.t1" value="-4,15"></td><td><input type="text" class="input-table data-field" data-path="testes.sig1" value="0,03"></td></tr>
+                                <tr><td>Quartos</td><td>x</td><td><input type="text" class="input-table data-field" data-path="testes.t2" value="2,07"></td><td><input type="text" class="input-table data-field" data-path="testes.sig2" value="4,84"></td></tr>
+                                <tr><td>Vagas de garagem</td><td>x</td><td><input type="text" class="input-table data-field" data-path="testes.t3" value="6,75"></td><td><input type="text" class="input-table data-field" data-path="testes.sig3" value="0,00"></td></tr>
+                                <tr><td>Distancia mar</td><td>x</td><td><input type="text" class="input-table data-field" data-path="testes.t4" value="-3,37"></td><td><input type="text" class="input-table data-field" data-path="testes.sig4" value="0,23"></td></tr>
+                                <tr><td>Valor unitario</td><td>y</td><td><input type="text" class="input-table data-field" data-path="testes.t5" value="3,47"></td><td><input type="text" class="input-table data-field" data-path="testes.sig5" value="0,18"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECAO 14 - FUNDAMENTACAO -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-gavel" style="color:var(--primary);"></i> SECAO 14 - TABELA DE FUNDAMENTACAO NBR 14653-2</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="table-responsive">
+                        <table id="table-fundamentacao">
+                            <thead><tr><th style="width:50px;">Item</th><th>Descricao</th><th>Grau III</th><th>Grau II</th><th>Grau I</th><th style="width:80px;">Pontos</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECAO 15 - AMOSTRA -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-database" style="color:var(--primary);"></i> SECAO 15 - TABELA DE DADOS (AMOSTRA)</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="table-responsive">
+                        <table id="table-amostra">
+                            <thead><tr><th style="width:40px;">ID</th><th style="width:40px;">Off</th><th>Area Priv.</th><th>Quartos</th><th>Vagas</th><th>Bairro</th><th>Dist. Mar</th><th>Valor Unit.</th><th class="no-print" style="width:50px;">Acao</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <button class="btn no-print" style="background:#e8eaf6;color:var(--primary);width:auto;margin-top:0.5rem;" onclick="app.addRow('amostra')">
+                        <i class="fas fa-plus"></i> Adicionar Dado
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECAO 16 - ESTIMATIVAS -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-chart-pie" style="color:var(--primary);"></i> SECAO 16 - ESTIMATIVAS DE VALORES</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="grid-3">
+                        <div class="form-group"><label>Valor Minimo</label><input type="text" class="form-control data-field" data-path="estimativas.min"></div>
+                        <div class="form-group"><label>Valor Medio</label><input type="text" class="form-control data-field" data-path="estimativas.med"></div>
+                        <div class="form-group"><label>Valor Maximo</label><input type="text" class="form-control data-field" data-path="estimativas.max"></div>
+                        <div class="form-group"><label>Amplitude (%)</label><input type="text" class="form-control data-field" data-path="estimativas.amp"></div>
+                        <div class="form-group"><label>Grau de Precisao</label>
+                            <select class="form-control data-field" data-path="estimativas.grau">
+                                <option value="III">III</option><option value="II">II</option><option value="I">I</option>
+                            </select>
+                        </div>
+                    </div>
+                    <h4 style="margin:1.5rem 0 0.5rem;font-size:0.95rem;color:var(--primary);">Dados do Imovel Avaliando</h4>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Variavel</th><th>Conteudo</th><th>Extrapolacao</th></tr></thead>
+                            <tbody>
+                                <tr><td>Area privativa</td><td><input type="text" class="input-table data-field" data-path="estimativas.areaConteudo"></td><td><select class="input-table data-field" data-path="estimativas.areaExtrap"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></td></tr>
+                                <tr><td>Quartos</td><td><input type="text" class="input-table data-field" data-path="estimativas.qConteudo"></td><td><select class="input-table data-field" data-path="estimativas.qExtrap"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></td></tr>
+                                <tr><td>Vagas de garagem</td><td><input type="text" class="input-table data-field" data-path="estimativas.vConteudo"></td><td><select class="input-table data-field" data-path="estimativas.vExtrap"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></td></tr>
+                                <tr><td>Distancia mar</td><td><input type="text" class="input-table data-field" data-path="estimativas.dConteudo"></td><td><select class="input-table data-field" data-path="estimativas.dExtrap"><option value="Nao">Nao</option><option value="Sim">Sim</option></select></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANEXOS -->
+            <div class="section-card">
+                <div class="section-header" onclick="app.toggleSection(this)">
+                    <span><i class="fas fa-paperclip" style="color:var(--primary);"></i> ANEXOS E DOCUMENTACAO</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="section-body">
+                    <div class="no-print" style="margin-bottom:1rem;">
+                        <input type="file" id="file-input" multiple accept="image/*,application/pdf" style="display:none" onchange="app.handleFiles(this.files)">
+                        <button class="btn" style="background:#5c6bc0;color:white;width:auto;" onclick="document.getElementById('file-input').click()">
+                            <i class="fas fa-upload"></i> Anexar Arquivos (PDF, Imagens)
+                        </button>
+                        <span style="margin-left:1rem;font-size:0.85rem;color:var(--light);">Formatos aceitos: PDF, JPG, PNG, GIF</span>
+                    </div>
+                    <div id="attachments-list" class="attachment-grid"></div>
+                    <div id="no-attachments" style="text-align:center;padding:2rem;color:var(--light);font-size:0.9rem;">
+                        <i class="fas fa-file-upload" style="font-size:2rem;margin-bottom:0.5rem;opacity:0.3;"></i>
+                        <p>Nenhum arquivo anexado</p>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /form-container -->
+    </div><!-- /editor-view -->
+</div><!-- /app-screen -->
+
+<script>
+const app = {
+    currentUser: null,
+    currentProject: null,
+    filter: 'all',
+
+    init() {
+        const saved = localStorage.getItem('sisdea_logged_user');
+        if (saved) { this.currentUser = JSON.parse(saved); this.showDashboard(); }
+    },
+
+    toggleAuth(isLogin) {
+        document.getElementById('login-form').classList.toggle('hidden', !isLogin);
+        document.getElementById('register-form').classList.toggle('hidden', isLogin);
+    },
+
+    register() {
+        const name = document.getElementById('reg-name').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const pass = document.getElementById('reg-pass').value;
+        if (!name || !email || !pass) return this.toast('Preencha todos os campos', 'error');
+        if (pass.length < 4) return this.toast('Senha deve ter no minimo 4 caracteres', 'error');
+        let users = JSON.parse(localStorage.getItem('sisdea_users') || '[]');
+        if (users.find(u => u.email === email)) return this.toast('E-mail ja cadastrado', 'error');
+        users.push({ name, email, pass });
+        localStorage.setItem('sisdea_users', JSON.stringify(users));
+        this.toast('Conta criada com sucesso!', 'success');
+        this.toggleAuth(true);
+    },
+
+    login() {
+        const email = document.getElementById('login-email').value.trim();
+        const pass = document.getElementById('login-pass').value;
+        let users = JSON.parse(localStorage.getItem('sisdea_users') || '[]');
+        const user = users.find(u => u.email === email && u.pass === pass);
+        if (user) {
+            this.currentUser = user;
+            localStorage.setItem('sisdea_logged_user', JSON.stringify(user));
+            this.showDashboard();
+        } else {
+            this.toast('E-mail ou senha invalidos', 'error');
+        }
+    },
+
+    logout() {
+        localStorage.removeItem('sisdea_logged_user');
+        location.reload();
+    },
+
+    showDashboard() {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('app-screen').classList.remove('hidden');
+        document.getElementById('dashboard-view').classList.remove('hidden');
+        document.getElementById('editor-view').classList.add('hidden');
+        document.getElementById('display-user-name').innerText = 'Ola, ' + this.currentUser.name;
+        this.renderProjects();
+    },
+
+    showEditor(project) {
+        document.getElementById('dashboard-view').classList.add('hidden');
+        document.getElementById('editor-view').classList.remove('hidden');
+        if (project) {
+            this.currentProject = JSON.parse(JSON.stringify(project));
+            document.getElementById('editor-title').innerHTML = '<i class="fas fa-file-alt"></i> Editando: ' + project.titulo;
+        } else {
+            this.currentProject = this.getDefaultProject();
+            document.getElementById('editor-title').innerHTML = '<i class="fas fa-file-alt"></i> Novo Relatorio de Avaliacao';
+        }
+        this.loadForm();
+    },
+
+    getDefaultProject() {
+        return {
+            id: Date.now(),
+            userId: this.currentUser.email,
+            titulo: 'Novo Projeto - ' + new Date().toLocaleDateString('pt-BR'),
+            dataCriacao: new Date().toISOString(),
+            concluido: false,
+            anexos: [],
+            dados: {
+                basico: { autor: this.currentUser.name, modelo: '', data: '', tipologia: 'Apartamentos' },
+                comp: { totalVar: 6, useVar: 5, totalDados: 37, useDados: 32 },
+                variaveis: [
+                    { nome: 'Area privativa', tipo: 'Numerica', class: 'Quantitativa', desc: '', hab: true },
+                    { nome: 'Quartos', tipo: 'Numerica', class: 'Quantitativa', desc: '', hab: true },
+                    { nome: 'Vagas de garagem', tipo: 'Numerica', class: 'Quantitativa', desc: '', hab: true },
+                    { nome: 'Bairro', tipo: 'Numerica', class: 'Dicotomica', desc: '', hab: false },
+                    { nome: 'Distancia mar', tipo: 'Numerica', class: 'Quantitativa', desc: '', hab: true },
+                    { nome: 'Valor unitario', tipo: 'Numerica', class: 'Dependente', desc: '', hab: true }
+                ],
+                estatisticas: [
+                    { nome: 'Area privativa', min: 60.00, max: 100.49, med: 76.84 },
+                    { nome: 'Quartos', min: 2.00, max: 3.00, med: 2.19 },
+                    { nome: 'Vagas de garagem', min: 1.00, max: 2.00, med: 1.06 },
+                    { nome: 'Distancia mar', min: 30.00, max: 1000.00, med: 341.56 },
+                    { nome: 'Valor unitario', min: 540000.00, max: 1339999.00, med: 758921.18 }
+                ],
+                coef: { r: 0.9303334, r2: 0.8655201, fisher: 43.44 },
+                normal: { sigma1: 68, sigma164: 90, sigma196: 100 },
+                outliers: { qtd: 0, perc: '0,00%' },
+                anova: { sqExp: '830356929404,668', glExp: 4, qmExp: '207589232351,167', f: '43,443', sqNaoExp: '129016387033,957', glNaoExp: 27, qmNaoExp: '4778384704,96', sqTotal: '959373316438,624', glTotal: 31 },
+                equacao: 'Valor unitario = +692222,7826 -34488196,05 / Area privativa +78973,96324 * Quartos +381466,5885 * Vagas de garagem -153,5755724 * Distancia mar',
+                testes: { t1: '-4,15', sig1: '0,03', t2: '2,07', sig2: '4,84', t3: '6,75', sig3: '0,00', t4: '-3,37', sig4: '0,23', t5: '3,47', sig5: '0,18' },
+                fundamentacao: [
+                    { id: 1, desc: 'Caracterizacao do imovel avaliando', g3: 'Completa quanto a todas as variaveis analisadas', g2: 'Completa quanto as variaveis utilizadas no modelo', g1: 'Adocao de situacao paradigma', pts: 3 },
+                    { id: 2, desc: 'Quantidade minima de dados de mercado', g3: '6 (k+1), onde k e o numero de variaveis independentes', g2: '4 (k+1), onde k e o numero de variaveis independentes', g1: '3 (k+1), onde k e o numero de variaveis independentes', pts: 3 },
+                    { id: 3, desc: 'Identificacao dos dados de mercado', g3: 'Informacoes relativas a todos os dados e variaveis analisados na modelagem, com foto', g2: 'Informacoes relativas a todos os dados e variaveis analisados na modelagem', g1: 'Informacoes relativas aos dados e variaveis efetivamente utilizados no modelo', pts: 2 },
+                    { id: 4, desc: 'Extrapolacao', g3: 'Nao admitida', g2: 'Admitida para apenas uma variavel, desde que: a) ate 100% do limite amostral; b) valor estimado nao ultrapasse 15%', g1: 'Admitida desde que: a) ate 100% do limite amostral; b) valor estimado nao ultrapasse 20%', pts: 3 },
+                    { id: 5, desc: 'Nivel de significancia maximo para rejeicao (teste bicaudal)', g3: '10%', g2: '20%', g1: '30%', pts: 3 },
+                    { id: 6, desc: 'Nivel de significancia maximo para rejeicao do modelo (teste F)', g3: '1%', g2: '2%', g1: '5%', pts: 3 }
+                ],
+                amostra: [
+                    { id: 1, off: false, area: 60.92, q: 2, v: 1, b: 2, d: 300, val: 680000 },
+                    { id: 2, off: false, area: 99.64, q: 3, v: 2, b: 2, d: 200, val: 1339999 },
+                    { id: 3, off: false, area: 76.75, q: 2, v: 1, b: 2, d: 650, val: 648000 },
+                    { id: 4, off: false, area: 67.05, q: 2, v: 1, b: 1, d: 60, val: 670000 },
+                    { id: 5, off: false, area: 76.49, q: 2, v: 1, b: 2, d: 700, val: 559000 },
+                    { id: 6, off: false, area: 70.25, q: 2, v: 1, b: 2, d: 100, val: 699000 },
+                    { id: 7, off: false, area: 100.34, q: 3, v: 1, b: 1, d: 150, val: 898805 },
+                    { id: 8, off: false, area: 89.00, q: 3, v: 1, b: 2, d: 50, val: 1050000 },
+                    { id: 9, off: false, area: 89.98, q: 2, v: 1, b: 2, d: 100, val: 890000 },
+                    { id: 10, off: false, area: 100.49, q: 3, v: 1, b: 2, d: 300, val: 900000 },
+                    { id: 11, off: false, area: 68.49, q: 2, v: 1, b: 2, d: 200, val: 645000 },
+                    { id: 12, off: false, area: 65.47, q: 2, v: 1, b: 1, d: 250, val: 750000 },
+                    { id: 13, off: false, area: 88.00, q: 2, v: 1, b: 2, d: 100, val: 745000 },
+                    { id: 14, off: false, area: 70.71, q: 2, v: 1, b: 2, d: 500, val: 618000 },
+                    { id: 15, off: false, area: 76.50, q: 2, v: 1, b: 2, d: 150, val: 780000 },
+                    { id: 16, off: false, area: 76.29, q: 2, v: 1, b: 1, d: 350, val: 790000 },
+                    { id: 17, off: false, area: 73.70, q: 2, v: 1, b: 2, d: 550, val: 759000 },
+                    { id: 18, off: false, area: 74.36, q: 2, v: 1, b: 2, d: 100, val: 739000 },
+                    { id: 19, off: false, area: 60.37, q: 2, v: 1, b: 1, d: 150, val: 659000 },
+                    { id: 20, off: false, area: 74.36, q: 3, v: 1, b: 1, d: 100, val: 739000 },
+                    { id: 21, off: false, area: 91.96, q: 2, v: 1, b: 2, d: 650, val: 725000 },
+                    { id: 22, off: false, area: 77.00, q: 2, v: 1, b: 2, d: 200, val: 872000 },
+                    { id: 23, off: false, area: 69.00, q: 2, v: 1, b: 2, d: 1000, val: 680000 },
+                    { id: 24, off: false, area: 68.00, q: 2, v: 1, b: 2, d: 550, val: 620000 },
+                    { id: 25, off: false, area: 96.00, q: 2, v: 2, b: 2, d: 100, val: 1213730 },
+                    { id: 26, off: false, area: 71.70, q: 2, v: 1, b: 2, d: 550, val: 591150 },
+                    { id: 27, off: false, area: 74.00, q: 2, v: 1, b: 2, d: 640, val: 629000 },
+                    { id: 28, off: false, area: 75.25, q: 2, v: 1, b: 1, d: 600, val: 747853.69 },
+                    { id: 29, off: false, area: 86.74, q: 3, v: 1, b: 2, d: 1000, val: 758940 },
+                    { id: 30, off: false, area: 62.00, q: 2, v: 1, b: 1, d: 30, val: 599000 },
+                    { id: 31, off: false, area: 68.07, q: 2, v: 1, b: 1, d: 50, val: 750000 },
+                    { id: 32, off: false, area: 60.00, q: 2, v: 1, b: 2, d: 500, val: 540000 }
+                ],
+                estimativas: { min: '714.147,56', med: '737.941,38', max: '761.735,20', amp: '3,22%', grau: 'III', areaConteudo: '72,10', areaExtrap: 'Nao', qConteudo: '2,00', qExtrap: 'Nao', vConteudo: '1,00', vExtrap: 'Nao', dConteudo: '100,00', dExtrap: 'Nao' }
+            }
+        };
+    },
+
+    renderProjects() {
+        const list = document.getElementById('project-list');
+        const search = document.getElementById('search-input').value.toLowerCase();
+        let projects = JSON.parse(localStorage.getItem('sisdea_projects') || '[]');
+        projects = projects.filter(p => p.userId === this.currentUser.email && p.titulo.toLowerCase().includes(search));
+        if (this.filter === 'done') projects = projects.filter(p => p.concluido);
+        if (this.filter === 'pending') projects = projects.filter(p => !p.concluido);
+        if (projects.length === 0) {
+            document.getElementById('empty-state').classList.remove('hidden');
+            list.innerHTML = '';
+            return;
+        }
+        document.getElementById('empty-state').classList.add('hidden');
+        list.innerHTML = projects.map(p => `
+            <div class="project-card ${p.concluido ? 'concluido' : ''}">
+                <span class="badge ${p.concluido ? 'badge-success' : 'badge-pending'}">${p.concluido ? 'Concluido' : 'Em Aberto'}</span>
+                <h3>${p.titulo}</h3>
+                <div class="project-meta">
+                    <i class="fas fa-calendar"></i> ${new Date(p.dataCriacao).toLocaleDateString('pt-BR')} &nbsp;|&nbsp;
+                    <i class="fas fa-user"></i> ${p.dados.basico.autor || '--'}
+                </div>
+                <div class="card-actions">
+                    <button class="btn-icon" title="Editar" onclick="app.showEditorById(${p.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn-icon" title="${p.concluido ? 'Reabrir' : 'Concluir'}" onclick="app.toggleStatus(${p.id})">
+                        <i class="fas ${p.concluido ? 'fa-undo' : 'fa-check'}"></i>
+                    </button>
+                    <button class="btn-icon" title="Excluir" style="color:var(--danger);" onclick="app.deleteProject(${p.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    filterProjects(type, el) {
+        this.filter = type;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        this.renderProjects();
+    },
+
+    newProject() { this.showEditor(null); },
+
+    showEditorById(id) {
+        const projects = JSON.parse(localStorage.getItem('sisdea_projects') || '[]');
+        const p = projects.find(x => x.id === id);
+        if (p) this.showEditor(p);
+    },
+
+    deleteProject(id) {
+        if (confirm('Deseja realmente excluir este projeto?')) {
+            let projects = JSON.parse(localStorage.getItem('sisdea_projects') || '[]');
+            projects = projects.filter(p => p.id !== id);
+            localStorage.setItem('sisdea_projects', JSON.stringify(projects));
+            this.renderProjects();
+            this.toast('Projeto excluido!', 'success');
+        }
+    },
+
+    toggleStatus(id) {
+        let projects = JSON.parse(localStorage.getItem('sisdea_projects') || '[]');
+        const idx = projects.findIndex(p => p.id === id);
+        projects[idx].concluido = !projects[idx].concluido;
+        localStorage.setItem('sisdea_projects', JSON.stringify(projects));
+        this.renderProjects();
+    },
+
+    toggleSection(header) {
+        const body = header.nextElementSibling;
+        const icon = header.querySelector('.fa-chevron-down');
+        body.classList.toggle('hidden');
+        icon.style.transform = body.classList.contains('hidden') ? 'rotate(-90deg)' : 'rotate(0deg)';
+    },
+
+    loadForm() {
+        const d = this.currentProject.dados;
+        document.querySelectorAll('.data-field').forEach(f => {
+            const path = f.dataset.path.split('.');
+            let val = d;
+            path.forEach(p => val = val ? val[p] : '');
+            f.value = val ?? '';
+        });
+        this.renderTable('variaveis');
+        this.renderTable('estatisticas');
+        this.renderTable('fundamentacao');
+        this.renderTable('amostra');
+        this.renderAttachments();
+    },
+
+    renderTable(table) {
+        const tbody = document.querySelector('#table-' + table + ' tbody');
+        if (!tbody) return;
+        const data = this.currentProject.dados[table];
+        if (!data) return;
+
+        if (table === 'variaveis') {
+            tbody.innerHTML = data.map((v, i) => `
+                <tr>
+                    <td><input type="text" class="input-table" value="${v.nome}" onchange="app.set('variaveis',${i},'nome',this.value)"></td>
+                    <td><select class="input-table" onchange="app.set('variaveis',${i},'tipo',this.value)">
+                        ${['Numerica','Texto'].map(o => `<option ${v.tipo===o?'selected':''}>${o}</option>`).join('')}
+                    </select></td>
+                    <td><select class="input-table" onchange="app.set('variaveis',${i},'class',this.value)">
+                        ${['Quantitativa','Qualitativa','Dicotomica','Dependente'].map(o => `<option ${v.class===o?'selected':''}>${o}</option>`).join('')}
+                    </select></td>
+                    <td><input type="text" class="input-table" value="${v.desc}" onchange="app.set('variaveis',${i},'desc',this.value)"></td>
+                    <td><input type="checkbox" ${v.hab?'checked':''} onchange="app.set('variaveis',${i},'hab',this.checked)"></td>
+                    <td class="no-print"><button class="btn-icon" onclick="app.removeRow('variaveis',${i})"><i class="fas fa-times"></i></button></td>
+                </tr>
+            `).join('');
+        } else if (table === 'estatisticas') {
+            tbody.innerHTML = data.map((e, i) => `
+                <tr>
+                    <td><input type="text" class="input-table" value="${e.nome}" onchange="app.set('estatisticas',${i},'nome',this.value)"></td>
+                    <td><input type="number" step="0.01" class="input-table" value="${e.min}" onchange="app.set('estatisticas',${i},'min',+this.value);app.renderTable('estatisticas')"></td>
+                    <td><input type="number" step="0.01" class="input-table" value="${e.max}" onchange="app.set('estatisticas',${i},'max',+this.value);app.renderTable('estatisticas')"></td>
+                    <td>${(e.max - e.min).toFixed(2)}</td>
+                    <td><input type="number" step="0.01" class="input-table" value="${e.med}" onchange="app.set('estatisticas',${i},'med',+this.value)"></td>
+                </tr>
+            `).join('');
+        } else if (table === 'fundamentacao') {
+            tbody.innerHTML = data.map((f, i) => `
+                <tr>
+                    <td style="text-align:center;font-weight:bold;">${f.id}</td>
+                    <td style="font-size:0.85rem;">${f.desc}</td>
+                    <td style="font-size:0.85rem;">${f.g3}</td>
+                    <td style="font-size:0.85rem;">${f.g2}</td>
+                    <td style="font-size:0.85rem;">${f.g1}</td>
+                    <td style="text-align:center;">
+                        <select class="input-table" onchange="app.set('fundamentacao',${i},'pts',+this.value)">
+                            ${[1,2,3].map(o => `<option value="${o}" ${f.pts==o?'selected':''}>${o}</option>`).join('')}
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        } else if (table === 'amostra') {
+            tbody.innerHTML = data.map((a, i) => `
+                <tr>
+                    <td style="text-align:center;">${a.id}</td>
+                    <td style="text-align:center;"><input type="checkbox" ${a.off?'checked':''} onchange="app.set('amostra',${i},'off',this.checked)"></td>
+                    <td><input type="number" step="0.01" class="input-table" value="${a.area}" onchange="app.set('amostra',${i},'area',+this.value)"></td>
+                    <td><input type="number" step="0.01" class="input-table" value="${a.q}" onchange="app.set('amostra',${i},'q',+this.value)"></td>
+                    <td><input type="number" step="0.01" class="input-table" value="${a.v}" onchange="app.set('amostra',${i},'v',+this.value)"></td>
+                    <td><input type="number" step="0.01" class="input-table" value="${a.b}" onchange="app.set('amostra',${i},'b',+this.value)"></td>
+                    <td><input type="number" step="0.01" class="input-table" value="${a.d}" onchange="app.set('amostra',${i},'d',+this.value)"></td>
+                    <td><input type="number" step="0.01" class="input-table" value="${a.val}" onchange="app.set('amostra',${i},'val',+this.value)"></td>
+                    <td class="no-print"><button class="btn-icon" onclick="app.removeRow('amostra',${i})"><i class="fas fa-times"></i></button></td>
+                </tr>
+            `).join('');
+        }
+    },
+
+    set(table, idx, field, val) {
+        this.currentProject.dados[table][idx][field] = val;
+    },
+
+    addRow(table) {
+        const d = this.currentProject.dados[table];
+        if (table === 'variaveis') d.push({ nome: 'Nova variavel', tipo: 'Numerica', class: 'Quantitativa', desc: '', hab: true });
+        if (table === 'amostra') d.push({ id: d.length + 1, off: false, area: 0, q: 0, v: 0, b: 0, d: 0, val: 0 });
+        this.loadForm();
+    },
+
+    removeRow(table, idx) {
+        if (confirm('Remover esta linha?')) {
+            this.currentProject.dados[table].splice(idx, 1);
+            this.loadForm();
+        }
+    },
+
+    handleFiles(files) {
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                this.currentProject.anexos.push({ nome: file.name, tipo: file.type, data: e.target.result });
+                this.renderAttachments();
+            };
+            reader.readAsDataURL(file);
+        });
+    },
+
+    renderAttachments() {
+        const list = document.getElementById('attachments-list');
+        const empty = document.getElementById('no-attachments');
+        const files = this.currentProject.anexos;
+        if (!files || files.length === 0) {
+            list.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+        list.innerHTML = files.map((f, i) => `
+            <div class="attachment-item">
+                ${f.tipo.startsWith('image/')
+                    ? `<img src="${f.data}" alt="${f.nome}">`
+                    : `<div class="file-icon"><i class="fas fa-file-pdf"></i></div>`
+                }
+                <div class="file-name" title="${f.nome}">${f.nome}</div>
+                <button class="btn-icon no-print" onclick="app.removeAttachment(${i})" style="margin-top:0.3rem;">
+                    <i class="fas fa-trash" style="color:var(--danger);"></i>
+                </button>
+            </div>
+        `).join('');
+    },
+
+    removeAttachment(i) {
+        this.currentProject.anexos.splice(i, 1);
+        this.renderAttachments();
+    },
+
+    saveCurrentProject() {
+        document.querySelectorAll('.data-field').forEach(f => {
+            const path = f.dataset.path.split('.');
+            let target = this.currentProject.dados;
+            for (let i = 0; i < path.length - 1; i++) target = target[path[i]];
+            target[path[path.length - 1]] = f.value;
+        });
+
+        if (!this.currentProject.titulo || this.currentProject.titulo.startsWith('Novo Projeto')) {
+            const t = prompt('Digite o titulo do projeto:', this.currentProject.titulo);
+            if (t) this.currentProject.titulo = t;
+            else return;
+        }
+
+        let projects = JSON.parse(localStorage.getItem('sisdea_projects') || '[]');
+        const idx = projects.findIndex(p => p.id === this.currentProject.id);
+        if (idx > -1) projects[idx] = JSON.parse(JSON.stringify(this.currentProject));
+        else projects.push(JSON.parse(JSON.stringify(this.currentProject)));
+
+        localStorage.setItem('sisdea_projects', JSON.stringify(projects));
+        this.toast('Projeto salvo com sucesso!', 'success');
+        this.showDashboard();
+    },
+
+    toast(msg, type) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.className = type === 'success' ? 'toast-success show' : 'toast-error show';
+        setTimeout(() => t.classList.remove('show'), 3500);
+    }
+};
+app.init();
+</script>
+</body>
+</html>
